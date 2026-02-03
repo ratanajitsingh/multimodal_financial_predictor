@@ -1,1 +1,16 @@
-.idea
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+anaconda/
+data/
+*.pt
+*.pth
+*.ckpt
+models/
+.idea/
+.env
