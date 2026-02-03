@@ -24,6 +24,16 @@ class FinancialDataset(Dataset):
         #fill missing data
         self.data[self.news_cols] = self.data[self.news_cols].fillna('')
 
+        #normalize numbers
+        self.numerical_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
+
+        for col in self.numerical_cols:
+            self.data[col] = pd.to_numeric(self.data[col], errors='coerce')
+        self.data = self.data.dropna(subset=self.numerical_cols)
+
+        self.num_means = self.data[self.numerical_cols].mean()
+        self.num_stds = self.data[self.numerical_cols].std()
+
         #initialize Tokenizer
         self.tokenizer = DistilBertTokenizer.from_pretrained(tokenizer_name)
         self.max_len = max_len
@@ -42,7 +52,7 @@ class FinancialDataset(Dataset):
         #cleaning data
         headlines = headlines.replace('b"','').replace('b\'','')
 
-        encoding = self.tokenizer.encode_plus(
+        encoding = self.tokenizer(
             headlines,
             add_special_tokens=True,
             max_length=self.max_len,
@@ -54,11 +64,12 @@ class FinancialDataset(Dataset):
 
         ## processing numerical features ##
 
-        numerical_cols = ['Open','High','Low','Close','Volume']
-        price_features = row[numerical_cols].values.astype('float32')
-        price_tensor = torch.tensor(price_features)
+        raw_values = row[self.numerical_cols].values.astype('float32')
+        means = self.num_means.values.astype('float32')
+        stds = self.num_stds.values.astype('float32')
 
-
+        normalized_values = (raw_values - means) / stds
+        price_tensor = torch.tensor(normalized_values)
         ## labelling ##
         #already done in data set
         label = int(row['Label'])
